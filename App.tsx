@@ -30,7 +30,7 @@ const App: React.FC = () => {
             <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-full">
               <Camera size={16} />
             </div>
-            <span className="font-serif text-xl font-bold tracking-tight">Lumina</span>
+            <span className="font-serif text-xl font-bold tracking-tight">mtnozr</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -62,7 +62,7 @@ const App: React.FC = () => {
           >
             <header className="mb-16 text-center max-w-2xl mx-auto">
               <h1 className="text-5xl md:text-6xl font-serif mb-6 text-gray-900">
-                Görsel Anlatılar
+                mtnozr fotoğraf portföyü
               </h1>
               <p className="text-gray-500 leading-relaxed">
                 Dünyayı ışık ve gölgeyle yakalamak. Her karede sessiz bir hikaye, her açıda yeni bir perspektif.
@@ -103,7 +103,7 @@ const App: React.FC = () => {
             <h2 className="text-4xl font-serif mb-8">Hakkımda</h2>
             <div className="prose prose-lg text-gray-600 font-light">
               <p className="mb-6">
-                Merhaba, ben <strong>Lumina</strong>. Fotoğraf makinesi benim dünyayı anlama biçimim. 
+                Merhaba, ben <strong>mtnozr</strong>. Fotoğraf makinesi benim dünyayı anlama biçimim. 
                 İstanbul'da yaşayan ve ışığın peşinden koşan bir görsel hikaye anlatıcısıyım.
               </p>
               <p className="mb-6">
@@ -192,7 +192,7 @@ const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-12 text-center text-gray-400 text-sm">
-        <p>&copy; {new Date().getFullYear()} Lumina Photography. Tüm hakları saklıdır.</p>
+        <p>&copy; {new Date().getFullYear()} mtnozr Photography. Tüm hakları saklıdır.</p>
       </footer>
 
       {/* Modal */}
