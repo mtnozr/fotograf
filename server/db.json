@@ -1,0 +1,21 @@
+{
+  "categories": [
+    {
+      "id": "portrait",
+      "name": "Portre"
+    },
+    {
+      "id": "landscape",
+      "name": "Manzara"
+    },
+    {
+      "id": "urban",
+      "name": "Şehir"
+    },
+    {
+      "id": "minimal",
+      "name": "Minimal"
+    }
+  ],
+  "photos": []
+}
