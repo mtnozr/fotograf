@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/api';
+import { login } from '../../services/api';
 import { Lock } from 'lucide-react';
 
 const Login: React.FC = () => {

@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api';
+// Use relative path '/api'. 
+// In development, Vite proxy will forward to localhost:3001.
+// In production (Vercel), it will be handled by Vercel rewrites to the serverless function.
+const API_URL = '/api';
 
 const api = axios.create({
   baseURL: API_URL,

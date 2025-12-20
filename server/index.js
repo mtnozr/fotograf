@@ -147,8 +147,8 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
 
       const photo = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        url: `http://localhost:${PORT}/uploads/${optimizedFilename}`,
-        originalUrl: `http://localhost:${PORT}/uploads/${file.filename}`,
+        url: `${req.protocol}://${req.get('host')}/uploads/${optimizedFilename}`,
+        originalUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
         category: category || 'all',
         title: file.originalname.split('.')[0],
         width: metadata.width, // approximate from original
