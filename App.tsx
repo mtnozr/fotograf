@@ -1,25 +1,45 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Camera, Mail, Instagram, Twitter } from 'lucide-react';
 
 import PhotoGrid from './components/PhotoGrid';
 import PhotoModal from './components/PhotoModal';
-import { PHOTOS, NAV_ITEMS } from './constants';
+import Login from './components/admin/Login';
+import Dashboard from './components/admin/Dashboard';
+import { NAV_ITEMS } from './constants';
 import { Photo, PhotoCategory } from './types';
+import { getPhotos, getCategories } from './services/api';
 
-const App: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<PhotoCategory>(PhotoCategory.ALL);
+const Portfolio: React.FC = () => {
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [activeSection, setActiveSection] = useState<string>('portfolio');
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [fetchedPhotos, fetchedCategories] = await Promise.all([
+          getPhotos(),
+          getCategories()
+        ]);
+        setPhotos(fetchedPhotos);
+        setCategories([{ id: 'all', name: 'Tümü' }, ...fetchedCategories]);
+      } catch (error) {
+        console.error("Could not fetch data, using static fallback if available", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filteredPhotos = useMemo(() => {
-    if (activeCategory === PhotoCategory.ALL) {
-      return PHOTOS;
+    if (activeCategory === 'all') {
+      return photos;
     }
-    return PHOTOS.filter((photo) => photo.category === activeCategory);
-  }, [activeCategory]);
-
-  const categories = Object.values(PhotoCategory);
+    return photos.filter((photo) => photo.category === activeCategory);
+  }, [activeCategory, photos]);
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-gray-900 selection:bg-black selection:text-white">
@@ -73,15 +93,15 @@ const App: React.FC = () => {
             <div className="flex flex-wrap justify-center gap-4 mb-12">
               {categories.map((category) => (
                 <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
                   className={`px-5 py-2 rounded-full text-sm transition-all duration-300 ${
-                    activeCategory === category
+                    activeCategory === category.id
                       ? 'bg-black text-white shadow-lg'
                       : 'bg-white text-gray-500 hover:bg-gray-100 border border-transparent hover:border-gray-200'
                   }`}
                 >
-                  {category}
+                  {category.name}
                 </button>
               ))}
             </div>
@@ -203,6 +223,36 @@ const App: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
+  const token = localStorage.getItem('token');
+  const location = useLocation();
+
+  if (!token) {
+    return <Login />;
+  }
+
+  return children;
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Portfolio />} />
+        <Route path="/admin/login" element={<Login />} />
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </Router>
   );
 };
 
