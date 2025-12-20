@@ -209,4 +209,5 @@ app.delete('/api/photos', authenticateToken, async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Deployed at:', new Date().toISOString());
 });
