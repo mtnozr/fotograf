@@ -2,10 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
-const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const cloudinary = require('cloudinary').v2;
 
 dotenv.config();
 
@@ -163,8 +163,8 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
     saveDB(db);
     res.json(uploadedPhotos);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Yükleme hatası' });
+    console.error("Cloudinary upload error:", error);
+    res.status(500).json({ message: 'Yükleme hatası: ' + (error.message || JSON.stringify(error)) });
   }
 });
 
