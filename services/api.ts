@@ -56,7 +56,8 @@ export const uploadPhotos = async (formData, onUploadProgress) => {
 };
 
 export const deletePhoto = async (id) => {
-    const response = await api.delete(`/photos/${id}`);
+    // Send ID as query param to handle characters like slashes in public_id
+    const response = await api.delete('/photos', { params: { id } });
     return response.data;
 };
 

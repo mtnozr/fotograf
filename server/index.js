@@ -168,9 +168,13 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
   }
 });
 
-// Delete Photo
-app.delete('/api/photos/:id', authenticateToken, (req, res) => {
-  const { id } = req.params;
+// Delete Photo (Cloudinary)
+// Note: id param might need to be encoded by client if it contains slashes (portfolio/abc)
+// Better to use a query parameter for safety with public_ids containing slashes
+app.delete('/api/photos', authenticateToken, async (req, res) => {
+  const { id } = req.query; 
+  if (!id) return res.status(400).json({ message: 'ID gerekli' });
+
   const db = getDB();
   const photoIndex = db.photos.findIndex(p => p.id === id);
   
@@ -179,13 +183,11 @@ app.delete('/api/photos/:id', authenticateToken, (req, res) => {
   }
 
   const photo = db.photos[photoIndex];
-  // Try to delete file
+
   try {
-      const filename = path.basename(photo.url);
-      const filepath = path.join(UPLOADS_DIR, filename);
-      if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+      await cloudinary.uploader.destroy(photo.id);
   } catch (e) {
-      console.error("Error deleting file", e);
+      console.error("Cloudinary delete error", e);
   }
 
   db.photos.splice(photoIndex, 1);
