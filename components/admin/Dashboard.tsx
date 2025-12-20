@@ -51,9 +51,10 @@ const Dashboard: React.FC = () => {
       alert('Yükleme başarılı!');
       setUploadProgress(0);
       fetchData(); // Refresh list
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Yükleme başarısız.');
+      const errorMessage = error.response?.data?.message || error.message || 'Yükleme başarısız.';
+      alert(`Yükleme hatası: ${errorMessage}`);
     } finally {
       setUploading(false);
     }
@@ -64,7 +65,7 @@ const Dashboard: React.FC = () => {
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     }
-  });
+  } as any);
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
