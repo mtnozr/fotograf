@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
+const { Readable } = require('stream');
 
 dotenv.config();
 
@@ -13,18 +14,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'gizli-anahtar-degistir-bunu';
 
+// Cloudinary Config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Cloudinary kullanacağımız için buna gerek kalmayabilir ama dursun
 
 // Data simulation
-const DB_FILE = path.join(__dirname, 'db.json');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR);
-}
+// UYARI: Vercel gibi serverless ortamlarda bu dosya kalıcı olmaz!
+// Her deploy'da veya cold start'ta sıfırlanabilir.
+// Gerçek bir veritabanı (MongoDB, PostgreSQL vb.) kullanılması önerilir.
+const DB_FILE = path.join('/tmp', 'db.json'); // Vercel'de yazılabilir tek yer /tmp
+// Ancak /tmp de geçicidir. Şimdilik çalışması için böyle yapıyoruz.
 
 if (!fs.existsSync(DB_FILE)) {
   fs.writeFileSync(DB_FILE, JSON.stringify({
@@ -39,7 +46,12 @@ if (!fs.existsSync(DB_FILE)) {
 }
 
 // Helper to read/write DB
-const getDB = () => JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+const getDB = () => {
+    if (!fs.existsSync(DB_FILE)) {
+        return { categories: [], photos: [] };
+    }
+    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+};
 const saveDB = (data) => fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
 // Auth Middleware
