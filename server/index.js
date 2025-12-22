@@ -76,15 +76,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Multer Storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
@@ -149,29 +141,32 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
     const uploadedPhotos = [];
 
     for (const file of req.files) {
-      // Optimization with Sharp
-      const optimizedFilename = `opt-${file.filename}`;
-      const optimizedPath = path.join(UPLOADS_DIR, optimizedFilename);
-      
-      const metadata = await sharp(file.path).metadata();
-      
-      await sharp(file.path)
-        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80 })
-        .toFile(optimizedPath);
-
-      // Clean up original if wanted, or keep it. We'll keep optimized one for display
-      // Ideally we would delete the original heavy file to save space
-      // fs.unlinkSync(file.path); 
+      // Upload to Cloudinary using stream
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { 
+            folder: 'portfolio',
+            transformation: [
+              { width: 1200, crop: "limit" },
+              { quality: "auto" }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        Readable.from(file.buffer).pipe(uploadStream);
+      });
 
       const photo = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        url: `${req.protocol}://${req.get('host')}/uploads/${optimizedFilename}`,
-        originalUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+        id: result.public_id, // Use Cloudinary public_id as ID
+        url: result.secure_url,
+        originalUrl: result.secure_url,
         category: category || 'all',
         title: file.originalname.split('.')[0],
-        width: metadata.width, // approximate from original
-        height: metadata.height, // approximate from original
+        width: result.width,
+        height: result.height,
         date: new Date().toISOString()
       };
       
