@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
+const sharp = require('sharp');
 const { Readable } = require('stream');
 
 dotenv.config();
@@ -13,6 +14,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'gizli-anahtar-degistir-bunu';
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 // Cloudinary Config
 cloudinary.config({
@@ -24,7 +31,7 @@ cloudinary.config({
 // Middleware
 app.use(cors());
 app.use(express.json());
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Cloudinary kullanacağımız için buna gerek kalmayabilir ama dursun
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Data simulation
 // UYARI: Vercel gibi serverless ortamlarda bu dosya kalıcı olmaz!
