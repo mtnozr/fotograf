@@ -28,6 +28,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Check config
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.warn("UYARI: Cloudinary ortam değişkenleri eksik! Fotoğraf yükleme çalışmayacaktır.");
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -54,10 +59,10 @@ if (!fs.existsSync(DB_FILE)) {
 
 // Helper to read/write DB
 const getDB = () => {
-    if (!fs.existsSync(DB_FILE)) {
-        return { categories: [], photos: [] };
-    }
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  if (!fs.existsSync(DB_FILE)) {
+    return { categories: [], photos: [] };
+  }
+  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
 };
 const saveDB = (data) => fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
@@ -78,7 +83,7 @@ const authenticateToken = (req, res, next) => {
 // Multer Storage
 const storage = multer.memoryStorage();
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -95,7 +100,7 @@ const upload = multer({
 // Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  
+
   // Demo user - In production use a database
   if (username === 'admin' && password === 'admin123') {
     const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
@@ -115,7 +120,7 @@ app.get('/api/categories', (req, res) => {
 app.post('/api/categories', authenticateToken, (req, res) => {
   const { name } = req.body;
   const id = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
-  
+
   const db = getDB();
   if (db.categories.find(c => c.id === id)) {
     return res.status(400).json({ message: 'Kategori zaten var' });
@@ -136,6 +141,12 @@ app.get('/api/photos', (req, res) => {
 // Upload Photo
 app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (req, res) => {
   try {
+    // Check for Cloudinary config
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error("Cloudinary configuration missing");
+      return res.status(500).json({ message: 'Sunucu yapılandırma hatası: Cloudinary ayarları eksik.' });
+    }
+
     const { category } = req.body;
     const db = getDB();
     const uploadedPhotos = [];
@@ -144,7 +155,7 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
       // Upload to Cloudinary using stream
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          { 
+          {
             folder: 'portfolio',
             transformation: [
               { width: 1200, crop: "limit" },
@@ -169,7 +180,7 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
         height: result.height,
         date: new Date().toISOString()
       };
-      
+
       db.photos.push(photo);
       uploadedPhotos.push(photo);
     }
@@ -186,12 +197,12 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
 // Note: id param might need to be encoded by client if it contains slashes (portfolio/abc)
 // Better to use a query parameter for safety with public_ids containing slashes
 app.delete('/api/photos', authenticateToken, async (req, res) => {
-  const { id } = req.query; 
+  const { id } = req.query;
   if (!id) return res.status(400).json({ message: 'ID gerekli' });
 
   const db = getDB();
   const photoIndex = db.photos.findIndex(p => p.id === id);
-  
+
   if (photoIndex === -1) {
     return res.status(404).json({ message: 'Fotoğraf bulunamadı' });
   }
@@ -199,9 +210,9 @@ app.delete('/api/photos', authenticateToken, async (req, res) => {
   const photo = db.photos[photoIndex];
 
   try {
-      await cloudinary.uploader.destroy(photo.id);
+    await cloudinary.uploader.destroy(photo.id);
   } catch (e) {
-      console.error("Cloudinary delete error", e);
+    console.error("Cloudinary delete error", e);
   }
 
   db.photos.splice(photoIndex, 1);
