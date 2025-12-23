@@ -252,7 +252,7 @@ const Portfolio: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mesaj</label>
-                  <textarea name="message" rows={4} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Projenizden bahsedin..."></textarea>
+                  <textarea name="message" rows={4} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder=""></textarea>
                 </div>
                 <button type="submit" className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   Gönder
