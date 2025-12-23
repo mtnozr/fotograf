@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Wand2, Loader2, Share2 } from 'lucide-react';
+import { X, Share2 } from 'lucide-react';
 import { Photo } from '../types';
-import { generatePhotoDescription } from '../services/geminiService';
 
 interface PhotoModalProps {
   photo: Photo | null;
@@ -10,23 +9,6 @@ interface PhotoModalProps {
 }
 
 const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
-  const [description, setDescription] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-
-  // Reset state when photo changes
-  useEffect(() => {
-    setDescription('');
-    setLoading(false);
-  }, [photo]);
-
-  const handleGenerateStory = async () => {
-    if (!photo) return;
-    setLoading(true);
-    const story = await generatePhotoDescription(photo.title, photo.category);
-    setDescription(story);
-    setLoading(false);
-  };
-
   if (!photo) return null;
 
   return (
@@ -70,36 +52,6 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
                 <span className="text-xs font-bold tracking-widest uppercase text-gray-500">{photo.category}</span>
               </div>
               <h2 className="text-3xl font-serif font-light text-gray-900 mb-6">{photo.title}</h2>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 min-h-[120px]">
-                  {loading ? (
-                    <div className="flex items-center justify-center h-full text-gray-400 gap-2">
-                      <Loader2 className="animate-spin" size={18} />
-                      <span className="text-sm">Yapay zeka düşünüyor...</span>
-                    </div>
-                  ) : description ? (
-                    <motion.p 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-gray-600 font-serif italic leading-relaxed text-sm"
-                    >
-                      "{description}"
-                    </motion.p>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <p className="text-gray-400 text-sm mb-3">Bu fotoğrafın hikayesini henüz keşfetmediniz.</p>
-                      <button
-                        onClick={handleGenerateStory}
-                        className="flex items-center gap-2 px-4 py-2 bg-black text-white text-sm rounded-full hover:bg-gray-800 transition-colors"
-                      >
-                        <Wand2 size={14} />
-                        <span>AI ile Yorumla</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center text-gray-400 text-sm">
