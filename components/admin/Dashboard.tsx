@@ -1,8 +1,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, deletePost, getAbout, saveAbout } from '../../services/api';
+import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, updatePost, deletePost, getAbout, saveAbout } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool, User, Save } from 'lucide-react';
+import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool, User, Save, Edit, X } from 'lucide-react';
 import { Photo, PhotoCategory, BlogPost } from '../../types';
 
 interface AboutContent {
@@ -30,6 +30,13 @@ const Dashboard: React.FC = () => {
   const [blogContent, setBlogContent] = useState('');
   const [blogCoverImage, setBlogCoverImage] = useState<File | null>(null);
   const [blogSubmitting, setBlogSubmitting] = useState(false);
+
+  // Edit blog form state
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // About form state
   const [aboutContent, setAboutContent] = useState<AboutContent>({
@@ -163,6 +170,51 @@ const Dashboard: React.FC = () => {
     } catch (e) {
       alert("Silme başarısız");
     }
+  };
+
+  const handleEditPost = (post: BlogPost) => {
+    setEditingPost(post);
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditCoverImage(null);
+  };
+
+  const handleUpdatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPost || !editTitle || !editContent) {
+      alert('Başlık ve içerik gereklidir');
+      return;
+    }
+
+    setEditSubmitting(true);
+    const formData = new FormData();
+    formData.append('title', editTitle);
+    formData.append('content', editContent);
+    if (editCoverImage) {
+      formData.append('coverImage', editCoverImage);
+    }
+
+    try {
+      await updatePost(editingPost.id, formData, () => { });
+      alert('Blog yazısı güncellendi!');
+      setEditingPost(null);
+      setEditTitle('');
+      setEditContent('');
+      setEditCoverImage(null);
+      fetchData();
+    } catch (error: any) {
+      console.error(error);
+      alert('Blog yazısı güncellenemedi: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingPost(null);
+    setEditTitle('');
+    setEditContent('');
+    setEditCoverImage(null);
   };
 
   const handleSaveAbout = async (e: React.FormEvent) => {
@@ -438,12 +490,22 @@ const Dashboard: React.FC = () => {
                         {new Date(post.date).toLocaleDateString('tr-TR')}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-2"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditPost(post)}
+                        className="text-gray-400 hover:text-blue-600 transition-colors p-2"
+                        title="Düzenle"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        className="text-gray-400 hover:text-red-600 transition-colors p-2"
+                        title="Sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {posts.length === 0 && (
@@ -453,6 +515,79 @@ const Dashboard: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* Edit Modal */}
+            {editingPost && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">Blog Yazısını Düzenle</h3>
+                    <button
+                      onClick={handleCloseEditModal}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleUpdatePost} className="p-6 space-y-4">
+                    <div>
+                      <label className="text-sm text-gray-500 block mb-1">Başlık</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="Blog yazısı başlığı"
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-gray-500 block mb-1">Mevcut Kapak Görseli</label>
+                      {editingPost.coverImage && (
+                        <img src={editingPost.coverImage} alt="Cover" className="w-full h-32 object-cover rounded mb-2" />
+                      )}
+                      <label className="text-sm text-gray-500 block mb-1">Yeni Kapak Görseli (Opsiyonel)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setEditCoverImage(e.target.files?.[0] || null)}
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm text-gray-500 block mb-1">İçerik</label>
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        placeholder="Blog yazısı içeriği..."
+                        rows={10}
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black resize-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleCloseEditModal}
+                        className="flex-1 bg-gray-100 text-gray-700 py-3 rounded font-medium hover:bg-gray-200 transition-colors"
+                      >
+                        İptal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={editSubmitting}
+                        className="flex-1 bg-black text-white py-3 rounded font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Save size={18} />
+                        {editSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

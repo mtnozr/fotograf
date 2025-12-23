@@ -77,6 +77,17 @@ export const createPost = async (formData, onUploadProgress) => {
   return response.data;
 };
 
+export const updatePost = async (id, formData, onUploadProgress) => {
+  const response = await api.put('/posts', formData, {
+    params: { id },
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress,
+  });
+  return response.data;
+};
+
 export const deletePost = async (id) => {
   const response = await api.delete('/posts', { params: { id } });
   return response.data;

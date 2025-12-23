@@ -328,6 +328,74 @@ app.post('/api/posts', authenticateToken, upload.single('coverImage'), async (re
   }
 });
 
+// Update Blog Post
+app.put('/api/posts', authenticateToken, upload.single('coverImage'), async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ message: 'ID gerekli' });
+
+  try {
+    const { title, content, excerpt } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ message: 'Başlık ve içerik zorunludur' });
+    }
+
+    // Get existing post
+    const docRef = db.collection('posts').doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Blog yazısı bulunamadı' });
+    }
+
+    const existingPost = doc.data();
+    let coverImageUrl = existingPost.coverImage;
+
+    // Upload new cover image if provided
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'blog',
+            transformation: [
+              { width: 1200, crop: "limit" },
+              { quality: "auto" }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        Readable.from(req.file.buffer).pipe(uploadStream);
+      });
+      coverImageUrl = result.secure_url;
+    }
+
+    const slug = title.toLowerCase()
+      .replace(/[^a-z0-9\s-ğüşıöç]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
+    const updatedPost = {
+      ...existingPost,
+      title,
+      content,
+      excerpt: excerpt || content.substring(0, 150) + '...',
+      coverImage: coverImageUrl,
+      slug,
+      updatedAt: new Date().toISOString()
+    };
+
+    await docRef.set(updatedPost);
+    res.json(updatedPost);
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ message: 'Blog yazısı güncellenemedi: ' + error.message });
+  }
+});
+
 // Delete Blog Post
 app.delete('/api/posts', authenticateToken, async (req, res) => {
   const { id } = req.query;
