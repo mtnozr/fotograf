@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Mail, Instagram, Twitter, PenTool } from 'lucide-react';
+import { Camera, Mail, Instagram, PenTool } from 'lucide-react';
 
 import PhotoGrid from './components/PhotoGrid';
 import PhotoModal from './components/PhotoModal';
@@ -199,49 +199,58 @@ const Portfolio: React.FC = () => {
             animate={{ opacity: 1 }}
             className="max-w-2xl mx-auto pt-10 text-center"
           >
-            <h2 className="text-4xl font-serif mb-6">Birlikte Çalışalım</h2>
+            <h2 className="text-4xl font-serif mb-6">Merhaba! 👋</h2>
             <p className="text-gray-500 mb-12 text-lg">
               Yeni bir proje için fikirleriniz mi var? Yoksa sadece merhaba demek mi istiyorsunuz?
             </p>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left mb-12">
-              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+              <form
+                className="space-y-6"
+                action={`mailto:mtnozr@gmail.com`}
+                method="POST"
+                encType="text/plain"
+                onSubmit={(e) => {
+                  const form = e.currentTarget;
+                  const name = (form.querySelector('input[name="name"]') as HTMLInputElement)?.value || '';
+                  const email = (form.querySelector('input[name="email"]') as HTMLInputElement)?.value || '';
+                  const message = (form.querySelector('textarea[name="message"]') as HTMLTextAreaElement)?.value || '';
+                  const subject = encodeURIComponent(`İletişim Formu: ${name}`);
+                  const body = encodeURIComponent(`İsim: ${name}\nE-posta: ${email}\n\nMesaj:\n${message}`);
+                  window.location.href = `mailto:mtnozr@gmail.com?subject=${subject}&body=${body}`;
+                  e.preventDefault();
+                }}
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">İsim</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Adınız Soyadınız" />
+                  <input type="text" name="name" required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Adınız Soyadınız" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
-                  <input type="email" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="ornek@email.com" />
+                  <input type="email" name="email" required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="ornek@email.com" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mesaj</label>
-                  <textarea rows={4} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Projenizden bahsedin..."></textarea>
+                  <textarea name="message" rows={4} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Projenizden bahsedin..."></textarea>
                 </div>
-                <button className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors">
+                <button type="submit" className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors">
                   Gönder
                 </button>
               </form>
             </div>
 
             <div className="flex justify-center gap-8">
-              <a href="#" className="flex flex-col items-center gap-2 group">
+              <a href="mailto:mtnozr@gmail.com" className="flex flex-col items-center gap-2 group">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
                   <Mail size={20} />
                 </div>
-                <span className="text-sm font-medium">Email</span>
+                <span className="text-sm font-medium">mtnozr@gmail.com</span>
               </a>
-              <a href="#" className="flex flex-col items-center gap-2 group">
+              <a href="https://instagram.com/mtnozrr" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 group">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
                   <Instagram size={20} />
                 </div>
-                <span className="text-sm font-medium">Instagram</span>
-              </a>
-              <a href="#" className="flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
-                  <Twitter size={20} />
-                </div>
-                <span className="text-sm font-medium">Twitter</span>
+                <span className="text-sm font-medium">@mtnozrr</span>
               </a>
             </div>
           </motion.div>
