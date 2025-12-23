@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Mail, Instagram, Twitter } from 'lucide-react';
+import { Camera, Mail, Instagram, Twitter, PenTool } from 'lucide-react';
 
 import PhotoGrid from './components/PhotoGrid';
 import PhotoModal from './components/PhotoModal';
@@ -52,9 +52,10 @@ const Portfolio: React.FC = () => {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveSection('portfolio')}>
-            <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-full">
-              <Camera size={16} />
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveSection('blog')}>
+            <div className="w-10 h-8 bg-black text-white flex items-center justify-center rounded-full gap-1">
+              <Camera size={14} />
+              <PenTool size={12} />
             </div>
             <span className="font-serif text-xl font-bold tracking-tight">mtnozr</span>
           </div>
