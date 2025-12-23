@@ -8,8 +8,42 @@ interface PhotoModalProps {
   onClose: () => void;
 }
 
+// Category ID to Turkish name mapping
+const categoryNames: Record<string, string> = {
+  'all': 'Tümü',
+  'landscape': 'Manzara',
+  'portrait': 'Portre',
+  'urban': 'Şehir',
+  'minimal': 'Minimal'
+};
+
 const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
   if (!photo) return null;
+
+  const getCategoryName = (categoryId: string): string => {
+    return categoryNames[categoryId.toLowerCase()] || categoryId;
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'mtnozr Fotoğraf',
+      text: `${getCategoryName(photo.category)} kategorisinden bir fotoğraf`,
+      url: photo.url
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy URL to clipboard
+        await navigator.clipboard.writeText(photo.url);
+        alert('Fotoğraf linki panoya kopyalandı!');
+      }
+    } catch (error) {
+      // User cancelled or error
+      console.log('Share cancelled or failed');
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -40,7 +74,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
           <div className="w-full md:w-2/3 bg-gray-100 flex items-center justify-center relative overflow-hidden group">
             <img
               src={photo.url}
-              alt={photo.title}
+              alt={getCategoryName(photo.category)}
               className="w-full h-full object-cover max-h-[50vh] md:max-h-[90vh]"
             />
           </div>
@@ -49,14 +83,17 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
           <div className="w-full md:w-1/3 p-8 flex flex-col justify-between bg-white">
             <div>
               <div className="mb-2">
-                <span className="text-xs font-bold tracking-widest uppercase text-gray-500">{photo.category}</span>
+                <span className="text-xs font-bold tracking-widest uppercase text-gray-500">{getCategoryName(photo.category)}</span>
               </div>
-              <h2 className="text-3xl font-serif font-light text-gray-900 mb-6">{photo.title}</h2>
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center text-gray-400 text-sm">
               <span>{photo.width} x {photo.height}px</span>
-              <button className="hover:text-black transition-colors">
+              <button
+                onClick={handleShare}
+                className="hover:text-black transition-colors"
+                title="Paylaş"
+              >
                 <Share2 size={18} />
               </button>
             </div>
