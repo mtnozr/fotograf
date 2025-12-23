@@ -207,7 +207,7 @@ const Portfolio: React.FC = () => {
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left mb-12">
               <form
                 className="space-y-6"
-                action="https://formspree.io/f/mtnozr@gmail.com"
+                action="https://formspree.io/f/meejnpwl"
                 method="POST"
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -220,7 +220,7 @@ const Portfolio: React.FC = () => {
 
                   try {
                     const formData = new FormData(form);
-                    const response = await fetch('https://formspree.io/f/mtnozr@gmail.com', {
+                    const response = await fetch('https://formspree.io/f/meejnpwl', {
                       method: 'POST',
                       body: formData,
                       headers: {
