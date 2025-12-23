@@ -207,18 +207,39 @@ const Portfolio: React.FC = () => {
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left mb-12">
               <form
                 className="space-y-6"
-                action={`mailto:mtnozr@gmail.com`}
+                action="https://formspree.io/f/mtnozr@gmail.com"
                 method="POST"
-                encType="text/plain"
-                onSubmit={(e) => {
-                  const form = e.currentTarget;
-                  const name = (form.querySelector('input[name="name"]') as HTMLInputElement)?.value || '';
-                  const email = (form.querySelector('input[name="email"]') as HTMLInputElement)?.value || '';
-                  const message = (form.querySelector('textarea[name="message"]') as HTMLTextAreaElement)?.value || '';
-                  const subject = encodeURIComponent(`İletişim Formu: ${name}`);
-                  const body = encodeURIComponent(`İsim: ${name}\nE-posta: ${email}\n\nMesaj:\n${message}`);
-                  window.location.href = `mailto:mtnozr@gmail.com?subject=${subject}&body=${body}`;
+                onSubmit={async (e) => {
                   e.preventDefault();
+                  const form = e.currentTarget;
+                  const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+                  const originalText = submitBtn.innerText;
+
+                  submitBtn.disabled = true;
+                  submitBtn.innerText = 'Gönderiliyor...';
+
+                  try {
+                    const formData = new FormData(form);
+                    const response = await fetch('https://formspree.io/f/mtnozr@gmail.com', {
+                      method: 'POST',
+                      body: formData,
+                      headers: {
+                        'Accept': 'application/json'
+                      }
+                    });
+
+                    if (response.ok) {
+                      alert('Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağım.');
+                      form.reset();
+                    } else {
+                      throw new Error('Gönderim başarısız');
+                    }
+                  } catch (error) {
+                    alert('Mesaj gönderilemedi. Lütfen doğrudan email ile iletişime geçin: mtnozr@gmail.com');
+                  } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                  }
                 }}
               >
                 <div>
@@ -233,7 +254,7 @@ const Portfolio: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mesaj</label>
                   <textarea name="message" rows={4} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all" placeholder="Projenizden bahsedin..."></textarea>
                 </div>
-                <button type="submit" className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors">
+                <button type="submit" className="w-full bg-black text-white py-4 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   Gönder
                 </button>
               </form>
