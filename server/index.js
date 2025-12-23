@@ -3,23 +3,16 @@ const cors = require('cors');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
-const sharp = require('sharp');
 const { Readable } = require('stream');
+const admin = require('firebase-admin');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'gizli-anahtar-degistir-bunu';
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-
-// Ensure uploads directory exists
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
 
 // Cloudinary Config
 cloudinary.config({
@@ -28,43 +21,58 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Check config
+// Check Cloudinary config
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
   console.warn("UYARI: Cloudinary ortam değişkenleri eksik! Fotoğraf yükleme çalışmayacaktır.");
 }
 
+// Firebase Admin SDK initialization
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+  console.error("HATA: Firebase ortam değişkenleri eksik!");
+} else {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    }),
+  });
+  console.log("Firebase Admin SDK initialized successfully.");
+}
+
+const db = admin.firestore();
+
+// Default categories to initialize if collection is empty
+const defaultCategories = [
+  { id: 'portrait', name: 'Portre' },
+  { id: 'landscape', name: 'Manzara' },
+  { id: 'urban', name: 'Şehir' },
+  { id: 'minimal', name: 'Minimal' }
+];
+
+// Initialize default categories if needed
+async function initializeCategories() {
+  try {
+    const snapshot = await db.collection('categories').get();
+    if (snapshot.empty) {
+      console.log("Initializing default categories...");
+      const batch = db.batch();
+      for (const cat of defaultCategories) {
+        const ref = db.collection('categories').doc(cat.id);
+        batch.set(ref, cat);
+      }
+      await batch.commit();
+      console.log("Default categories created.");
+    }
+  } catch (error) {
+    console.error("Error initializing categories:", error);
+  }
+}
+initializeCategories();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Data simulation
-// UYARI: Vercel gibi serverless ortamlarda bu dosya kalıcı olmaz!
-// Her deploy'da veya cold start'ta sıfırlanabilir.
-// Gerçek bir veritabanı (MongoDB, PostgreSQL vb.) kullanılması önerilir.
-const DB_FILE = path.join('/tmp', 'db.json'); // Vercel'de yazılabilir tek yer /tmp
-// Ancak /tmp de geçicidir. Şimdilik çalışması için böyle yapıyoruz.
-
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify({
-    categories: [
-      { id: 'portrait', name: 'Portre' },
-      { id: 'landscape', name: 'Manzara' },
-      { id: 'urban', name: 'Şehir' },
-      { id: 'minimal', name: 'Minimal' }
-    ],
-    photos: []
-  }, null, 2));
-}
-
-// Helper to read/write DB
-const getDB = () => {
-  if (!fs.existsSync(DB_FILE)) {
-    return { categories: [], photos: [] };
-  }
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-};
-const saveDB = (data) => fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
@@ -111,31 +119,59 @@ app.post('/api/login', (req, res) => {
 });
 
 // Get Categories
-app.get('/api/categories', (req, res) => {
-  const db = getDB();
-  res.json(db.categories);
+app.get('/api/categories', async (req, res) => {
+  try {
+    // Prevent mobile browser caching
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
+    const snapshot = await db.collection('categories').get();
+    const categories = snapshot.docs.map(doc => doc.data());
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: 'Kategoriler alınamadı' });
+  }
 });
 
 // Create Category
-app.post('/api/categories', authenticateToken, (req, res) => {
-  const { name } = req.body;
-  const id = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
+app.post('/api/categories', authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const id = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
 
-  const db = getDB();
-  if (db.categories.find(c => c.id === id)) {
-    return res.status(400).json({ message: 'Kategori zaten var' });
+    const docRef = db.collection('categories').doc(id);
+    const doc = await docRef.get();
+
+    if (doc.exists) {
+      return res.status(400).json({ message: 'Kategori zaten var' });
+    }
+
+    const newCategory = { id, name };
+    await docRef.set(newCategory);
+    res.json(newCategory);
+  } catch (error) {
+    console.error("Error creating category:", error);
+    res.status(500).json({ message: 'Kategori oluşturulamadı' });
   }
-
-  const newCategory = { id, name };
-  db.categories.push(newCategory);
-  saveDB(db);
-  res.json(newCategory);
 });
 
 // Get Photos
-app.get('/api/photos', (req, res) => {
-  const db = getDB();
-  res.json(db.photos);
+app.get('/api/photos', async (req, res) => {
+  try {
+    // Prevent mobile browser caching
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
+    const snapshot = await db.collection('photos').orderBy('date', 'desc').get();
+    const photos = snapshot.docs.map(doc => doc.data());
+    res.json(photos);
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    res.status(500).json({ message: 'Fotoğraflar alınamadı' });
+  }
 });
 
 // Upload Photo
@@ -148,7 +184,6 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
     }
 
     const { category } = req.body;
-    const db = getDB();
     const uploadedPhotos = [];
 
     for (const file of req.files) {
@@ -181,11 +216,11 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
         date: new Date().toISOString()
       };
 
-      db.photos.push(photo);
+      // Save to Firestore
+      await db.collection('photos').doc(result.public_id.replace(/\//g, '_')).set(photo);
       uploadedPhotos.push(photo);
     }
 
-    saveDB(db);
     res.json(uploadedPhotos);
   } catch (error) {
     console.error("Cloudinary upload error:", error);
@@ -193,31 +228,28 @@ app.post('/api/upload', authenticateToken, upload.array('photos', 10), async (re
   }
 });
 
-// Delete Photo (Cloudinary)
-// Note: id param might need to be encoded by client if it contains slashes (portfolio/abc)
-// Better to use a query parameter for safety with public_ids containing slashes
+// Delete Photo (Cloudinary + Firestore)
 app.delete('/api/photos', authenticateToken, async (req, res) => {
   const { id } = req.query;
   if (!id) return res.status(400).json({ message: 'ID gerekli' });
 
-  const db = getDB();
-  const photoIndex = db.photos.findIndex(p => p.id === id);
-
-  if (photoIndex === -1) {
-    return res.status(404).json({ message: 'Fotoğraf bulunamadı' });
-  }
-
-  const photo = db.photos[photoIndex];
-
   try {
-    await cloudinary.uploader.destroy(photo.id);
-  } catch (e) {
-    console.error("Cloudinary delete error", e);
-  }
+    // Delete from Cloudinary
+    try {
+      await cloudinary.uploader.destroy(id);
+    } catch (e) {
+      console.error("Cloudinary delete error", e);
+    }
 
-  db.photos.splice(photoIndex, 1);
-  saveDB(db);
-  res.json({ message: 'Silindi' });
+    // Delete from Firestore
+    const docId = id.replace(/\//g, '_');
+    await db.collection('photos').doc(docId).delete();
+
+    res.json({ message: 'Silindi' });
+  } catch (error) {
+    console.error("Error deleting photo:", error);
+    res.status(500).json({ message: 'Silme hatası' });
+  }
 });
 
 app.listen(PORT, () => {
