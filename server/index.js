@@ -342,8 +342,83 @@ app.delete('/api/posts', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== ABOUT PAGE ====================
+
+// Get About Content
+app.get('/api/about', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
+    const doc = await db.collection('settings').doc('about').get();
+    if (!doc.exists) {
+      // Return default content if not set
+      return res.json({
+        imageUrl: 'https://picsum.photos/1200/600?grayscale',
+        paragraph1: 'Merhaba, ben mtnozr. Fotoğraf makinesi benim dünyayı anlama biçimim. İstanbul\'da yaşayan ve ışığın peşinden koşan bir görsel hikaye anlatıcısıyım.',
+        paragraph2: 'Minimalizm felsefesini benimsiyorum; azın çok olduğuna inanıyorum. Fotoğraflarımda karmaşadan uzak, saf duyguyu ve anın estetiğini yakalamaya çalışıyorum.',
+        paragraph3: 'Teknolojiyi sanatla birleştirmeyi seviyorum. Bu portfolyoda gördüğünüz yapay zeka entegrasyonu, geleneksel fotoğrafçılığı modern anlatı teknikleriyle nasıl harmanlayabileceğimin bir denemesidir.',
+        experience: '8+ Yıl',
+        projects: '150+ Tamamlanan',
+        awards: '12 Ulusal'
+      });
+    }
+    res.json(doc.data());
+  } catch (error) {
+    console.error("Error fetching about:", error);
+    res.status(500).json({ message: 'Hakkımda içeriği alınamadı' });
+  }
+});
+
+// Save About Content
+app.post('/api/about', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { paragraph1, paragraph2, paragraph3, experience, projects, awards } = req.body;
+
+    let imageUrl = req.body.imageUrl || '';
+
+    // Upload image to Cloudinary if provided
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'about',
+            transformation: [
+              { width: 1200, crop: "limit" },
+              { quality: "auto" }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        Readable.from(req.file.buffer).pipe(uploadStream);
+      });
+      imageUrl = result.secure_url;
+    }
+
+    const aboutData = {
+      imageUrl,
+      paragraph1: paragraph1 || '',
+      paragraph2: paragraph2 || '',
+      paragraph3: paragraph3 || '',
+      experience: experience || '',
+      projects: projects || '',
+      awards: awards || '',
+      updatedAt: new Date().toISOString()
+    };
+
+    await db.collection('settings').doc('about').set(aboutData);
+    res.json(aboutData);
+  } catch (error) {
+    console.error("Error saving about:", error);
+    res.status(500).json({ message: 'Kaydetme hatası: ' + error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Deployed at:', new Date().toISOString());
 });
+
 

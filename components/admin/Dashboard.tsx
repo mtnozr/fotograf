@@ -1,12 +1,22 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, deletePost } from '../../services/api';
+import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, deletePost, getAbout, saveAbout } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool } from 'lucide-react';
+import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool, User, Save } from 'lucide-react';
 import { Photo, PhotoCategory, BlogPost } from '../../types';
 
+interface AboutContent {
+  imageUrl: string;
+  paragraph1: string;
+  paragraph2: string;
+  paragraph3: string;
+  experience: string;
+  projects: string;
+  awards: string;
+}
+
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'photos' | 'blog'>('photos');
+  const [activeTab, setActiveTab] = useState<'photos' | 'blog' | 'about'>('photos');
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -21,6 +31,19 @@ const Dashboard: React.FC = () => {
   const [blogCoverImage, setBlogCoverImage] = useState<File | null>(null);
   const [blogSubmitting, setBlogSubmitting] = useState(false);
 
+  // About form state
+  const [aboutContent, setAboutContent] = useState<AboutContent>({
+    imageUrl: '',
+    paragraph1: '',
+    paragraph2: '',
+    paragraph3: '',
+    experience: '',
+    projects: '',
+    awards: ''
+  });
+  const [aboutImage, setAboutImage] = useState<File | null>(null);
+  const [aboutSaving, setAboutSaving] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,15 +52,17 @@ const Dashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [cats, fetchedPhotos, fetchedPosts] = await Promise.all([
+      const [cats, fetchedPhotos, fetchedPosts, aboutData] = await Promise.all([
         getCategories(),
         getPhotos(),
-        getPosts()
+        getPosts(),
+        getAbout()
       ]);
       setCategories(cats);
       if (cats.length > 0 && !selectedCategory) setSelectedCategory(cats[0].id);
       setPhotos(fetchedPhotos);
       setPosts(fetchedPosts);
+      setAboutContent(aboutData);
     } catch (e) {
       console.error("Failed to fetch data", e);
       navigate('/admin/login');
@@ -140,6 +165,36 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleSaveAbout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAboutSaving(true);
+
+    const formData = new FormData();
+    formData.append('paragraph1', aboutContent.paragraph1);
+    formData.append('paragraph2', aboutContent.paragraph2);
+    formData.append('paragraph3', aboutContent.paragraph3);
+    formData.append('experience', aboutContent.experience);
+    formData.append('projects', aboutContent.projects);
+    formData.append('awards', aboutContent.awards);
+    formData.append('imageUrl', aboutContent.imageUrl);
+
+    if (aboutImage) {
+      formData.append('image', aboutImage);
+    }
+
+    try {
+      const savedData = await saveAbout(formData);
+      setAboutContent(savedData);
+      setAboutImage(null);
+      alert('Hakkımda sayfası güncellendi!');
+    } catch (error: any) {
+      console.error(error);
+      alert('Kaydetme hatası: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setAboutSaving(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
@@ -168,8 +223,8 @@ const Dashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('photos')}
             className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors ${activeTab === 'photos'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-black text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             <ImageIcon size={18} />
@@ -178,12 +233,22 @@ const Dashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('blog')}
             className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors ${activeTab === 'blog'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-black text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             <PenTool size={18} />
             Blog Yazıları
+          </button>
+          <button
+            onClick={() => setActiveTab('about')}
+            className={`flex items-center gap-2 pb-3 px-1 border-b-2 transition-colors ${activeTab === 'about'
+              ? 'border-black text-black'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+          >
+            <User size={18} />
+            Hakkımda
           </button>
         </div>
       </div>
@@ -389,6 +454,108 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* About Tab */}
+        {activeTab === 'about' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <User size={20} />
+                Hakkımda Sayfasını Düzenle
+              </h2>
+
+              <form onSubmit={handleSaveAbout} className="space-y-6">
+                {/* Image */}
+                <div>
+                  <label className="text-sm text-gray-500 block mb-2">Kapak Görseli</label>
+                  {aboutContent.imageUrl && (
+                    <img src={aboutContent.imageUrl} alt="Current" className="w-full h-48 object-cover rounded-lg mb-3" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setAboutImage(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                  />
+                </div>
+
+                {/* Paragraphs */}
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">1. Paragraf</label>
+                  <textarea
+                    value={aboutContent.paragraph1}
+                    onChange={(e) => setAboutContent({ ...aboutContent, paragraph1: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">2. Paragraf</label>
+                  <textarea
+                    value={aboutContent.paragraph2}
+                    onChange={(e) => setAboutContent({ ...aboutContent, paragraph2: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">3. Paragraf</label>
+                  <textarea
+                    value={aboutContent.paragraph3}
+                    onChange={(e) => setAboutContent({ ...aboutContent, paragraph3: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500 block mb-1">Deneyim</label>
+                    <input
+                      type="text"
+                      value={aboutContent.experience}
+                      onChange={(e) => setAboutContent({ ...aboutContent, experience: e.target.value })}
+                      placeholder="8+ Yıl"
+                      className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 block mb-1">Projeler</label>
+                    <input
+                      type="text"
+                      value={aboutContent.projects}
+                      onChange={(e) => setAboutContent({ ...aboutContent, projects: e.target.value })}
+                      placeholder="150+ Tamamlanan"
+                      className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500 block mb-1">Ödüller</label>
+                    <input
+                      type="text"
+                      value={aboutContent.awards}
+                      onChange={(e) => setAboutContent({ ...aboutContent, awards: e.target.value })}
+                      placeholder="12 Ulusal"
+                      className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:border-black"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={aboutSaving}
+                  className="w-full bg-black text-white py-3 rounded font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Save size={18} />
+                  {aboutSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 

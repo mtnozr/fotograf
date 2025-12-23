@@ -11,7 +11,7 @@ import Login from './components/admin/Login';
 import Dashboard from './components/admin/Dashboard';
 import { NAV_ITEMS } from './constants';
 import { Photo, PhotoCategory, BlogPost } from './types';
-import { getPhotos, getCategories, getPosts } from './services/api';
+import { getPhotos, getCategories, getPosts, getAbout } from './services/api';
 
 const Portfolio: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -21,18 +21,29 @@ const Portfolio: React.FC = () => {
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [aboutContent, setAboutContent] = useState<{
+    imageUrl: string;
+    paragraph1: string;
+    paragraph2: string;
+    paragraph3: string;
+    experience: string;
+    projects: string;
+    awards: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [fetchedPhotos, fetchedCategories, fetchedPosts] = await Promise.all([
+        const [fetchedPhotos, fetchedCategories, fetchedPosts, aboutData] = await Promise.all([
           getPhotos(),
           getCategories(),
-          getPosts()
+          getPosts(),
+          getAbout()
         ]);
         setPhotos(fetchedPhotos);
         setCategories([{ id: 'all', name: 'Tümü' }, ...fetchedCategories]);
         setPosts(fetchedPosts);
+        setAboutContent(aboutData);
       } catch (error) {
         console.error("Could not fetch data, using static fallback if available", error);
       }
@@ -142,45 +153,41 @@ const Portfolio: React.FC = () => {
         )}
 
         {/* About Section */}
-        {activeSection === 'about' && (
+        {activeSection === 'about' && aboutContent && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="max-w-3xl mx-auto pt-10"
           >
             <div className="aspect-video w-full bg-gray-200 rounded-xl overflow-hidden mb-12">
-              <img src="https://picsum.photos/1200/600?grayscale" className="w-full h-full object-cover" alt="Photographer working" />
+              <img src={aboutContent.imageUrl} className="w-full h-full object-cover" alt="Photographer working" />
             </div>
             <h2 className="text-4xl font-serif mb-8">Hakkımda</h2>
             <div className="prose prose-lg text-gray-600 font-light">
-              <p className="mb-6">
-                Merhaba, ben <strong>mtnozr</strong>. Fotoğraf makinesi benim dünyayı anlama biçimim.
-                İstanbul'da yaşayan ve ışığın peşinden koşan bir görsel hikaye anlatıcısıyım.
-              </p>
-              <p className="mb-6">
-                Minimalizm felsefesini benimsiyorum; azın çok olduğuna inanıyorum. Fotoğraflarımda
-                karmaşadan uzak, saf duyguyu ve anın estetiğini yakalamaya çalışıyorum. İster şehrin
-                kaotik sokakları olsun, ister doğanın sessiz köşeleri, her yerde bir denge arayışındayım.
-              </p>
-              <p>
-                Teknolojiyi sanatla birleştirmeyi seviyorum. Bu portfolyoda gördüğünüz yapay zeka entegrasyonu,
-                geleneksel fotoğrafçılığı modern anlatı teknikleriyle nasıl harmanlayabileceğimin bir denemesidir.
-              </p>
+              {aboutContent.paragraph1 && <p className="mb-6">{aboutContent.paragraph1}</p>}
+              {aboutContent.paragraph2 && <p className="mb-6">{aboutContent.paragraph2}</p>}
+              {aboutContent.paragraph3 && <p>{aboutContent.paragraph3}</p>}
             </div>
 
             <div className="mt-12 pt-12 border-t border-gray-200 flex gap-8">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Deneyim</span>
-                <span className="text-xl font-serif">8+ Yıl</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Projeler</span>
-                <span className="text-xl font-serif">150+ Tamamlanan</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Ödüller</span>
-                <span className="text-xl font-serif">12 Ulusal</span>
-              </div>
+              {aboutContent.experience && (
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Deneyim</span>
+                  <span className="text-xl font-serif">{aboutContent.experience}</span>
+                </div>
+              )}
+              {aboutContent.projects && (
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Projeler</span>
+                  <span className="text-xl font-serif">{aboutContent.projects}</span>
+                </div>
+              )}
+              {aboutContent.awards && (
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Ödüller</span>
+                  <span className="text-xl font-serif">{aboutContent.awards}</span>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

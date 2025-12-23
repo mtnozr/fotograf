@@ -82,4 +82,19 @@ export const deletePost = async (id) => {
   return response.data;
 };
 
+// About Page API
+export const getAbout = async () => {
+  const response = await api.get('/about');
+  return response.data;
+};
+
+export const saveAbout = async (formData) => {
+  const response = await api.post('/about', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export default api;
