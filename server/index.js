@@ -252,7 +252,98 @@ app.delete('/api/photos', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== BLOG POSTS ====================
+
+// Get Blog Posts
+app.get('/api/posts', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
+    const snapshot = await db.collection('posts').orderBy('date', 'desc').get();
+    const posts = snapshot.docs.map(doc => doc.data());
+    res.json(posts);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ message: 'Blog yazıları alınamadı' });
+  }
+});
+
+// Create Blog Post
+app.post('/api/posts', authenticateToken, upload.single('coverImage'), async (req, res) => {
+  try {
+    const { title, content, excerpt } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ message: 'Başlık ve içerik zorunludur' });
+    }
+
+    let coverImageUrl = '';
+
+    // Upload cover image to Cloudinary if provided
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'blog',
+            transformation: [
+              { width: 1200, crop: "limit" },
+              { quality: "auto" }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        Readable.from(req.file.buffer).pipe(uploadStream);
+      });
+      coverImageUrl = result.secure_url;
+    }
+
+    const slug = title.toLowerCase()
+      .replace(/[^a-z0-9\s-ğüşıöç]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
+    const postId = `${Date.now()}-${slug}`;
+
+    const post = {
+      id: postId,
+      title,
+      content,
+      excerpt: excerpt || content.substring(0, 150) + '...',
+      coverImage: coverImageUrl,
+      date: new Date().toISOString(),
+      slug
+    };
+
+    await db.collection('posts').doc(postId).set(post);
+    res.json(post);
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ message: 'Blog yazısı oluşturulamadı: ' + error.message });
+  }
+});
+
+// Delete Blog Post
+app.delete('/api/posts', authenticateToken, async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ message: 'ID gerekli' });
+
+  try {
+    await db.collection('posts').doc(id).delete();
+    res.json({ message: 'Blog yazısı silindi' });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: 'Silme hatası' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Deployed at:', new Date().toISOString());
 });
+

@@ -19,3 +19,13 @@ export interface NavItem {
   label: string;
   id: string;
 }
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  coverImage: string;
+  date: string;
+  slug: string;
+}

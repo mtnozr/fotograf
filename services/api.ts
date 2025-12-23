@@ -56,9 +56,30 @@ export const uploadPhotos = async (formData, onUploadProgress) => {
 };
 
 export const deletePhoto = async (id) => {
-    // Send ID as query param to handle characters like slashes in public_id
-    const response = await api.delete('/photos', { params: { id } });
-    return response.data;
+  // Send ID as query param to handle characters like slashes in public_id
+  const response = await api.delete('/photos', { params: { id } });
+  return response.data;
+};
+
+// Blog Posts API
+export const getPosts = async () => {
+  const response = await api.get('/posts');
+  return response.data;
+};
+
+export const createPost = async (formData, onUploadProgress) => {
+  const response = await api.post('/posts', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress,
+  });
+  return response.data;
+};
+
+export const deletePost = async (id) => {
+  const response = await api.delete('/posts', { params: { id } });
+  return response.data;
 };
 
 export default api;
