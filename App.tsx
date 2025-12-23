@@ -16,7 +16,7 @@ import { getPhotos, getCategories, getPosts } from './services/api';
 const Portfolio: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [activeSection, setActiveSection] = useState<string>('portfolio');
+  const [activeSection, setActiveSection] = useState<string>('blog');
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);

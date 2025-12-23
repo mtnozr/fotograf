@@ -76,8 +76,8 @@ export const PHOTOS: Photo[] = [
 ];
 
 export const NAV_ITEMS = [
-  { label: 'Portfolyo', id: 'portfolio' },
   { label: 'Blog', id: 'blog' },
+  { label: 'Fotoğraf', id: 'portfolio' },
   { label: 'Hakkımda', id: 'about' },
   { label: 'İletişim', id: 'contact' },
 ];
