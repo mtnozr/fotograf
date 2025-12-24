@@ -333,7 +333,7 @@ const Portfolio: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-12 text-center text-gray-400 text-sm">
-        <p>&copy; {new Date().getFullYear()} mtnozr Photography. Tüm hakları saklıdır.</p>
+        <p>&copy; {new Date().getFullYear()} mtnozr kişisel blog. Tüm hakları saklıdır.</p>
       </footer>
 
       {/* Modal */}
