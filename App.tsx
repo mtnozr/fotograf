@@ -254,7 +254,7 @@ const Portfolio: React.FC = () => {
           >
             <h2 className="text-4xl font-serif mb-6">Merhaba! 👋</h2>
             <p className="text-gray-500 mb-12 text-lg">
-              Yeni bir proje için fikirleriniz mi var? Yoksa sadece merhaba demek mi istiyorsunuz?
+              Benimle bu form aracılığıyla iletişime geçebilirsiniz.
             </p>
 
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left mb-12">
