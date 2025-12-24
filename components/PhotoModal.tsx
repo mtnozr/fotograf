@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share2 } from 'lucide-react';
 import { Photo } from '../types';
@@ -17,7 +17,34 @@ const categoryNames: Record<string, string> = {
   'minimal': 'Minimal'
 };
 
+// Image optimization helper for Cloudinary URLs
+const getOptimizedUrl = (url: string, width: number): string => {
+  if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+    return url.replace('/upload/', `/upload/w_${width},f_auto,q_auto/`);
+  }
+  return url;
+};
+
 const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
+  // ESC key handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (photo) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [photo, handleKeyDown]);
+
   if (!photo) return null;
 
   const getCategoryName = (categoryId: string): string => {
@@ -53,6 +80,9 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
         exit={{ opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="photo-modal-title"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -66,6 +96,7 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
           <button
             onClick={onClose}
             className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+            aria-label="Kapat (ESC)"
           >
             <X size={20} />
           </button>
@@ -73,9 +104,16 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
           {/* Image Section */}
           <div className="w-full md:w-2/3 bg-gray-100 flex items-center justify-center relative overflow-hidden group">
             <img
-              src={photo.url}
+              src={getOptimizedUrl(photo.url, 1200)}
+              srcSet={`
+                ${getOptimizedUrl(photo.url, 600)} 600w,
+                ${getOptimizedUrl(photo.url, 900)} 900w,
+                ${getOptimizedUrl(photo.url, 1200)} 1200w
+              `}
+              sizes="(max-width: 768px) 100vw, 66vw"
               alt={getCategoryName(photo.category)}
               className="w-full h-full object-cover max-h-[50vh] md:max-h-[90vh]"
+              loading="eager"
             />
           </div>
 
@@ -83,7 +121,9 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
           <div className="w-full md:w-1/3 p-8 flex flex-col justify-between bg-white">
             <div>
               <div className="mb-2">
-                <span className="text-xs font-bold tracking-widest uppercase text-gray-500">{getCategoryName(photo.category)}</span>
+                <span id="photo-modal-title" className="text-xs font-bold tracking-widest uppercase text-gray-500">
+                  {getCategoryName(photo.category)}
+                </span>
               </div>
             </div>
 
@@ -91,8 +131,9 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
               <span>{photo.width} x {photo.height}px</span>
               <button
                 onClick={handleShare}
-                className="hover:text-black transition-colors"
+                className="hover:text-black transition-colors p-2 -m-2 rounded-lg hover:bg-gray-100"
                 title="Paylaş"
+                aria-label="Fotoğrafı paylaş"
               >
                 <Share2 size={18} />
               </button>

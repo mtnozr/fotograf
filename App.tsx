@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Camera, Mail, Instagram, PenTool } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Camera, Mail, Instagram, PenTool, Menu, X } from 'lucide-react';
 
 import PhotoGrid from './components/PhotoGrid';
 import PhotoModal from './components/PhotoModal';
@@ -30,9 +30,12 @@ const Portfolio: React.FC = () => {
     projects: string;
     awards: string;
   } | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const [fetchedPhotos, fetchedCategories, fetchedPosts, aboutData] = await Promise.all([
           getPhotos(),
@@ -46,6 +49,8 @@ const Portfolio: React.FC = () => {
         setAboutContent(aboutData);
       } catch (error) {
         console.error("Could not fetch data, using static fallback if available", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -63,7 +68,7 @@ const Portfolio: React.FC = () => {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveSection('blog')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveSection('blog'); setMobileMenuOpen(false); }}>
             <div className="w-10 h-8 bg-black text-white flex items-center justify-center rounded-full gap-1">
               <Camera size={14} />
               <PenTool size={12} />
@@ -71,11 +76,13 @@ const Portfolio: React.FC = () => {
             <span className="font-serif text-xl font-bold tracking-tight">mtnozr</span>
           </div>
 
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
+                aria-current={activeSection === item.id ? 'page' : undefined}
                 className={`text-sm font-medium tracking-wide transition-colors ${activeSection === item.id ? 'text-black' : 'text-gray-400 hover:text-gray-600'
                   }`}
               >
@@ -83,7 +90,47 @@ const Portfolio: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-white border-t border-gray-100 overflow-hidden"
+            >
+              <div className="px-6 py-4 space-y-2">
+                {NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveSection(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`block w-full text-left py-3 px-4 rounded-lg text-base font-medium transition-colors ${activeSection === item.id
+                      ? 'bg-black text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Main Content Area */}
@@ -122,7 +169,16 @@ const Portfolio: React.FC = () => {
               ))}
             </div>
 
-            <PhotoGrid photos={filteredPhotos} onPhotoClick={setSelectedPhoto} />
+            {/* Photo Grid with Loading State */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="aspect-[4/5] bg-gray-200 animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <PhotoGrid photos={filteredPhotos} onPhotoClick={setSelectedPhoto} />
+            )}
           </motion.div>
         )}
 
@@ -146,7 +202,25 @@ const Portfolio: React.FC = () => {
                     Fotoğrafçılık, teknoloji ve yaratıcılık üzerine düşüncelerim.
                   </p>
                 </header>
-                <BlogList posts={posts} onPostClick={setSelectedPost} />
+
+                {/* Blog List with Loading State */}
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                        <div className="aspect-video bg-gray-200 animate-pulse" />
+                        <div className="p-6 space-y-3">
+                          <div className="h-4 bg-gray-200 animate-pulse rounded w-1/3" />
+                          <div className="h-6 bg-gray-200 animate-pulse rounded w-2/3" />
+                          <div className="h-4 bg-gray-200 animate-pulse rounded w-full" />
+                          <div className="h-4 bg-gray-200 animate-pulse rounded w-1/4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <BlogList posts={posts} onPostClick={setSelectedPost} />
+                )}
               </>
             )}
           </motion.div>

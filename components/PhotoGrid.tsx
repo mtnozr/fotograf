@@ -20,6 +20,14 @@ const getCategoryName = (categoryId: string): string => {
   return categoryNames[categoryId.toLowerCase()] || categoryId;
 };
 
+// Image optimization helper for Cloudinary URLs
+const getOptimizedUrl = (url: string, width: number): string => {
+  if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+    return url.replace('/upload/', `/upload/w_${width},f_auto,q_auto/`);
+  }
+  return url;
+};
+
 const PhotoGrid: React.FC<PhotoGridProps> = ({ photos, onPhotoClick }) => {
   return (
     <motion.div
@@ -40,7 +48,13 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({ photos, onPhotoClick }) => {
           >
             <div className="aspect-[4/5] overflow-hidden bg-gray-200">
               <img
-                src={photo.url}
+                src={getOptimizedUrl(photo.url, 400)}
+                srcSet={`
+                  ${getOptimizedUrl(photo.url, 300)} 300w,
+                  ${getOptimizedUrl(photo.url, 400)} 400w,
+                  ${getOptimizedUrl(photo.url, 600)} 600w
+                `}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 alt={getCategoryName(photo.category)}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
                 loading="lazy"
