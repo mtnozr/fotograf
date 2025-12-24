@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Calendar, X } from 'lucide-react';
+import { ArrowLeft, Calendar, X, Share2 } from 'lucide-react';
 import { BlogPost as BlogPostType } from '../types';
 
 interface BlogPostProps {
@@ -75,6 +75,34 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, onBack }) => {
                     style={{ whiteSpace: 'pre-wrap' }}
                 >
                     {post.content}
+                </div>
+
+                {/* Share Button */}
+                <div className="mt-12 pt-8 border-t border-gray-200">
+                    <button
+                        onClick={async () => {
+                            const shareData = {
+                                title: post.title,
+                                text: post.excerpt || post.title,
+                                url: window.location.href
+                            };
+
+                            try {
+                                if (navigator.share) {
+                                    await navigator.share(shareData);
+                                } else {
+                                    await navigator.clipboard.writeText(window.location.href);
+                                    alert('Yazı linki panoya kopyalandı!');
+                                }
+                            } catch (error) {
+                                console.log('Share cancelled or failed');
+                            }
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors font-medium"
+                    >
+                        <Share2 size={18} />
+                        <span>Bu yazıyı paylaş</span>
+                    </button>
                 </div>
             </motion.article>
 
