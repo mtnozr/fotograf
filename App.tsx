@@ -242,27 +242,6 @@ const Portfolio: React.FC = () => {
               {aboutContent.paragraph2 && <p className="mb-6">{aboutContent.paragraph2}</p>}
               {aboutContent.paragraph3 && <p>{aboutContent.paragraph3}</p>}
             </div>
-
-            <div className="mt-12 pt-12 border-t border-gray-200 flex gap-8">
-              {aboutContent.experience && (
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Deneyim</span>
-                  <span className="text-xl font-serif">{aboutContent.experience}</span>
-                </div>
-              )}
-              {aboutContent.projects && (
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Projeler</span>
-                  <span className="text-xl font-serif">{aboutContent.projects}</span>
-                </div>
-              )}
-              {aboutContent.awards && (
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Ödüller</span>
-                  <span className="text-xl font-serif">{aboutContent.awards}</span>
-                </div>
-              )}
-            </div>
           </motion.div>
         )}
 
