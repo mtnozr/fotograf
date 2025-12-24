@@ -475,32 +475,32 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Right Column: Posts List */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-100">
               <h2 className="text-lg font-semibold mb-6">Blog Yazıları</h2>
               <div className="space-y-4">
                 {posts.map(post => (
-                  <div key={post.id} className="flex gap-4 p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
+                  <div key={post.id} className="flex flex-col sm:flex-row gap-4 p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
                     {post.coverImage && (
-                      <img src={post.coverImage} alt={post.title} className="w-24 h-24 object-cover rounded" />
+                      <img src={post.coverImage} alt={post.title} className="w-full sm:w-24 h-32 sm:h-24 object-cover rounded" />
                     )}
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 mb-1">{post.title}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 mb-1 truncate">{post.title}</h3>
                       <p className="text-sm text-gray-500 mb-2 line-clamp-2">{post.excerpt}</p>
                       <span className="text-xs text-gray-400">
                         {new Date(post.date).toLocaleDateString('tr-TR')}
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 sm:flex-col">
                       <button
                         onClick={() => handleEditPost(post)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors p-2"
+                        className="flex-1 sm:flex-none text-gray-400 hover:text-blue-600 transition-colors p-2 bg-gray-50 sm:bg-transparent rounded"
                         title="Düzenle"
                       >
                         <Edit size={18} />
                       </button>
                       <button
                         onClick={() => handleDeletePost(post.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors p-2"
+                        className="flex-1 sm:flex-none text-gray-400 hover:text-red-600 transition-colors p-2 bg-gray-50 sm:bg-transparent rounded"
                         title="Sil"
                       >
                         <Trash2 size={18} />

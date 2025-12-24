@@ -111,7 +111,7 @@ app.post('/api/login', (req, res) => {
 
   // Demo user - In production use a database
   if (username === 'admin' && password === 'admin123') {
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '24h' });
     res.json({ token });
   } else {
     res.status(401).json({ message: 'Geçersiz kullanıcı adı veya şifre' });
