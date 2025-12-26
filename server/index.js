@@ -396,6 +396,38 @@ app.put('/api/posts', authenticateToken, upload.single('coverImage'), async (req
   }
 });
 
+// Upload Blog Content Image
+app.post('/api/upload-blog-image', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Görsel dosyası gerekli' });
+    }
+
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'blog-content',
+          transformation: [
+            { width: 1200, crop: "limit" },
+            { quality: "auto" }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      Readable.from(req.file.buffer).pipe(uploadStream);
+    });
+
+    res.json({ url: result.secure_url });
+  } catch (error) {
+    console.error("Error uploading blog image:", error);
+    res.status(500).json({ message: 'Görsel yüklenemedi: ' + error.message });
+  }
+});
+
 // Delete Blog Post
 app.delete('/api/posts', authenticateToken, async (req, res) => {
   const { id } = req.query;

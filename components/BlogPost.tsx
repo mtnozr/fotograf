@@ -70,11 +70,59 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, onBack }) => {
                     {post.title}
                 </h1>
 
-                <div
-                    className="prose prose-lg max-w-none text-gray-600 font-light leading-relaxed"
-                    style={{ whiteSpace: 'pre-wrap' }}
-                >
-                    {post.content}
+                <div className="prose prose-lg max-w-none text-gray-600 font-light leading-relaxed">
+                    {/* Parse content and render images */}
+                    {post.content.split(/(\!\[.*?\]\(.*?\))/).map((part, index) => {
+                        // Check if this part is an image markdown
+                        const imageMatch = part.match(/\!\[(.*?)\]\((.*?)\)/);
+                        if (imageMatch) {
+                            const [, alt, url] = imageMatch;
+                            return (
+                                <div
+                                    key={index}
+                                    className="my-6 cursor-zoom-in"
+                                    onClick={() => {
+                                        // Open image in modal - we'll use a simple approach
+                                        const modal = document.createElement('div');
+                                        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 cursor-zoom-out';
+                                        modal.onclick = () => {
+                                            document.body.removeChild(modal);
+                                            document.body.style.overflow = 'unset';
+                                        };
+                                        modal.innerHTML = `
+                                            <button class="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors" aria-label="Kapat">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                            <img src="${url}" alt="${alt}" class="max-w-full max-h-[90vh] object-contain rounded-lg" />
+                                        `;
+                                        document.body.appendChild(modal);
+                                        document.body.style.overflow = 'hidden';
+
+                                        // ESC key handler
+                                        const handleEsc = (e: KeyboardEvent) => {
+                                            if (e.key === 'Escape') {
+                                                document.body.removeChild(modal);
+                                                document.body.style.overflow = 'unset';
+                                                document.removeEventListener('keydown', handleEsc as EventListener);
+                                            }
+                                        };
+                                        document.addEventListener('keydown', handleEsc as EventListener);
+                                    }}
+                                >
+                                    <img
+                                        src={url}
+                                        alt={alt || 'Blog görseli'}
+                                        className="w-full rounded-lg hover:shadow-lg transition-shadow duration-300"
+                                    />
+                                </div>
+                            );
+                        }
+                        // Regular text - preserve whitespace
+                        return part ? <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span> : null;
+                    })}
                 </div>
 
                 {/* Share Button */}

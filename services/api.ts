@@ -88,6 +88,17 @@ export const updatePost = async (id, formData, onUploadProgress) => {
   return response.data;
 };
 
+export const uploadBlogImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post('/upload-blog-image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const deletePost = async (id) => {
   const response = await api.delete('/posts', { params: { id } });
   return response.data;

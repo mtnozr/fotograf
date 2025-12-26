@@ -1,8 +1,8 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, updatePost, deletePost, getAbout, saveAbout } from '../../services/api';
+import { uploadPhotos, getCategories, createCategory, logout, getPhotos, deletePhoto, getPosts, createPost, updatePost, deletePost, getAbout, saveAbout, uploadBlogImage } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool, User, Save, Edit, X } from 'lucide-react';
+import { LogOut, Upload, Plus, Trash2, Image as ImageIcon, FolderPlus, FileText, PenTool, User, Save, Edit, X, ImagePlus, Loader2 } from 'lucide-react';
 import { Photo, PhotoCategory, BlogPost } from '../../types';
 
 interface AboutContent {
@@ -30,6 +30,8 @@ const Dashboard: React.FC = () => {
   const [blogContent, setBlogContent] = useState('');
   const [blogCoverImage, setBlogCoverImage] = useState<File | null>(null);
   const [blogSubmitting, setBlogSubmitting] = useState(false);
+  const [blogImageUploading, setBlogImageUploading] = useState(false);
+  const blogContentRef = useRef<HTMLTextAreaElement>(null);
 
   // Edit blog form state
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -37,6 +39,8 @@ const Dashboard: React.FC = () => {
   const [editContent, setEditContent] = useState('');
   const [editCoverImage, setEditCoverImage] = useState<File | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editImageUploading, setEditImageUploading] = useState(false);
+  const editContentRef = useRef<HTMLTextAreaElement>(null);
 
   // About form state
   const [aboutContent, setAboutContent] = useState<AboutContent>({
@@ -215,6 +219,43 @@ const Dashboard: React.FC = () => {
     setEditTitle('');
     setEditContent('');
     setEditCoverImage(null);
+  };
+
+  // Insert image into blog content
+  const handleInsertBlogImage = async (
+    file: File,
+    setContent: React.Dispatch<React.SetStateAction<string>>,
+    setUploading: React.Dispatch<React.SetStateAction<boolean>>,
+    textareaRef: React.RefObject<HTMLTextAreaElement>
+  ) => {
+    setUploading(true);
+    try {
+      const result = await uploadBlogImage(file);
+      const imageMarkdown = `\n![](${result.url})\n`;
+
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentContent = textarea.value;
+        const newContent = currentContent.substring(0, start) + imageMarkdown + currentContent.substring(end);
+        setContent(newContent);
+
+        // Set cursor position after inserted image
+        setTimeout(() => {
+          textarea.focus();
+          const newPosition = start + imageMarkdown.length;
+          textarea.setSelectionRange(newPosition, newPosition);
+        }, 0);
+      } else {
+        setContent(prev => prev + imageMarkdown);
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert('Görsel yüklenemedi: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSaveAbout = async (e: React.FormEvent) => {
@@ -455,7 +496,28 @@ const Dashboard: React.FC = () => {
 
                 <div>
                   <label className="text-sm text-gray-500 block mb-1">İçerik</label>
+                  {/* Content Editor Toolbar */}
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                    <label className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded cursor-pointer transition-colors ${blogImageUploading ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={blogImageUploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleInsertBlogImage(file, setBlogContent, setBlogImageUploading, blogContentRef);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      {blogImageUploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
+                      <span>{blogImageUploading ? 'Yükleniyor...' : 'Görsel Ekle'}</span>
+                    </label>
+                  </div>
                   <textarea
+                    ref={blogContentRef}
                     value={blogContent}
                     onChange={(e) => setBlogContent(e.target.value)}
                     placeholder="Blog yazısı içeriği..."
@@ -558,7 +620,28 @@ const Dashboard: React.FC = () => {
 
                     <div>
                       <label className="text-sm text-gray-500 block mb-1">İçerik</label>
+                      {/* Content Editor Toolbar */}
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                        <label className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded cursor-pointer transition-colors ${editImageUploading ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={editImageUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleInsertBlogImage(file, setEditContent, setEditImageUploading, editContentRef);
+                              }
+                              e.target.value = '';
+                            }}
+                          />
+                          {editImageUploading ? <Loader2 size={16} className="animate-spin" /> : <ImagePlus size={16} />}
+                          <span>{editImageUploading ? 'Yükleniyor...' : 'Görsel Ekle'}</span>
+                        </label>
+                      </div>
                       <textarea
+                        ref={editContentRef}
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
                         placeholder="Blog yazısı içeriği..."
