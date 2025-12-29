@@ -129,9 +129,14 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, onBack }) => {
                 <div className="mt-12 pt-8 border-t border-gray-200">
                     <button
                         onClick={async () => {
+                            // Clean markdown image links from excerpt
+                            const cleanText = (post.excerpt || post.title)
+                                .replace(/!\[.*?\]\(.*?\)/g, '')
+                                .trim();
+
                             const shareData = {
                                 title: post.title,
-                                text: post.excerpt || post.title,
+                                text: cleanText,
                                 url: window.location.href
                             };
 
