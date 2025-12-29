@@ -50,7 +50,7 @@ const BlogList: React.FC<BlogListProps> = ({ posts, onPostClick }) => {
                             {post.title}
                         </h3>
                         <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                            {post.excerpt}
+                            {post.excerpt.replace(/!\[.*?\]\(.*?\)/g, '').trim()}
                         </p>
                         <div className="flex items-center gap-2 text-sm font-medium text-gray-900 group-hover:gap-3 transition-all">
                             <span>Devamını Oku</span>
