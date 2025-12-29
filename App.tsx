@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Mail, Instagram, PenTool, Menu, X } from 'lucide-react';
 
@@ -358,11 +358,85 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   return children;
 };
 
+// Blog Post Page Component with URL routing
+const BlogPage: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      setIsLoading(true);
+      try {
+        const posts = await getPosts();
+        const foundPost = posts.find(p => p.slug === slug);
+        if (foundPost) {
+          setPost(foundPost);
+        }
+      } catch (error) {
+        console.error('Could not fetch post', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPost();
+  }, [slug]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-serif mb-4">Blog yazısı bulunamadı</h1>
+        <button
+          onClick={() => navigate('/')}
+          className="px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
+        >
+          Ana Sayfaya Dön
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fafafa] text-gray-900">
+      {/* Simple Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-10 h-8 bg-black text-white flex items-center justify-center rounded-full gap-1">
+              <Camera size={14} />
+              <PenTool size={12} />
+            </div>
+            <span className="font-serif text-xl font-bold tracking-tight">mtnozr</span>
+          </div>
+        </div>
+      </nav>
+
+      <main className="pt-32 pb-20 px-6 max-w-7xl mx-auto min-h-screen">
+        <BlogPostView post={post} onBack={() => navigate('/')} />
+      </main>
+
+      <footer className="border-t border-gray-200 py-12 text-center text-gray-400 text-sm">
+        <p>&copy; {new Date().getFullYear()} mtnozr kişisel blog. Tüm hakları saklıdır.</p>
+      </footer>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Portfolio />} />
+        <Route path="/blog/:slug" element={<BlogPage />} />
         <Route path="/admin/login" element={<Login />} />
         <Route
           path="/admin/dashboard"

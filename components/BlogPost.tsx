@@ -134,17 +134,20 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, onBack }) => {
                                 .replace(/!\[.*?\]\(.*?\)/g, '')
                                 .trim();
 
+                            // Generate proper blog URL with slug
+                            const blogUrl = `${window.location.origin}/blog/${post.slug}`;
+
                             const shareData = {
                                 title: post.title,
                                 text: cleanText,
-                                url: window.location.href
+                                url: blogUrl
                             };
 
                             try {
                                 if (navigator.share) {
                                     await navigator.share(shareData);
                                 } else {
-                                    await navigator.clipboard.writeText(window.location.href);
+                                    await navigator.clipboard.writeText(blogUrl);
                                     alert('Yazı linki panoya kopyalandı!');
                                 }
                             } catch (error) {
