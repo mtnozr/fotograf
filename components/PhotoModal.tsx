@@ -52,10 +52,13 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
   };
 
   const handleShare = async () => {
+    const siteUrl = 'https://mtnozr.vercel.app/';
+    const shareText = `${getCategoryName(photo.category)} kategorisinden bir fotoğraf`;
+
     const shareData = {
       title: 'mtnozr Fotoğraf',
-      text: `${getCategoryName(photo.category)} kategorisinden bir fotoğraf`,
-      url: photo.url
+      text: shareText,
+      url: siteUrl
     };
 
     try {
@@ -63,8 +66,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ photo, onClose }) => {
         await navigator.share(shareData);
       } else {
         // Fallback: copy URL to clipboard
-        await navigator.clipboard.writeText(photo.url);
-        alert('Fotoğraf linki panoya kopyalandı!');
+        await navigator.clipboard.writeText(siteUrl);
+        alert('Site linki panoya kopyalandı!');
       }
     } catch (error) {
       // User cancelled or error
